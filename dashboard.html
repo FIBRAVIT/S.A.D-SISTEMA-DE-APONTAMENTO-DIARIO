@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S.A.D – Sistema de Apontamento Diário</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout" id="app-layout">
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+<div class="sidebar-header">
+<div class="sidebar-logo">
+<div class="logo-icon">📋</div>
+<span>S.A.D</span>
+<span style="font-size:9px;color:#9ca3af;display:block;margin-top:1px">Sistema de Apontamento Diário</span>
+</div>
+</div>
+<nav class="sidebar-nav">
+<div class="nav-section">Principal</div>
+<button class="nav-item" data-page="dashboard">
+<span class="nav-icon">📊</span> Dashboard
+      </button>
+<button class="nav-item" data-page="apontamento">
+<span class="nav-icon">📝</span> Apontamentos
+      </button>
+<div class="nav-section">Gestão</div>
+<button class="nav-item" data-page="relatorios">
+<span class="nav-icon">📈</span> Relatórios
+      </button>
+<button class="nav-item" data-page="cadastros">
+<span class="nav-icon">⚙️</span> Cadastros
+      </button>
+</nav>
+<div class="sidebar-footer">
+<div class="user-info">
+<div class="user-avatar" id="user-avatar">A</div>
+<div class="user-details">
+<div class="user-name" id="user-name">Usuário</div>
+<div class="user-role" id="user-role">perfil</div>
+</div>
+</div>
+<button class="btn-logout" id="btn-logout">🚪 Sair</button>
+</div>
+</aside>
+<!-- ============ MAIN ============ -->
+<main class="main-content">
+<!-- TOPBAR -->
+<div class="topbar">
+<div class="topbar-title">
+<h2 id="page-title">Dashboard</h2>
+<p id="page-subtitle">Visão geral do dia</p>
+</div>
+<div class="topbar-actions">
+<span id="topbar-date" style="font-size:13px;color:#6b7280;font-weight:500"></span>
+<div class="alert alert-success" id="alert-global" style="margin:0;padding:8px 14px"></div>
+</div>
+</div>
+<div class="page-content">
+<!-- ======================================
+           PÁGINA: DASHBOARD
+           ====================================== -->
+<div class="page-section" id="page-dashboard">
+<!-- KPIs -->
+<div class="kpi-grid">
+<div class="kpi-card">
+<div class="kpi-icon blue">📋</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-total-hoje">--</div>
+<div class="kpi-label">Apontamentos Hoje</div>
+<div class="kpi-sub">Total do dia</div>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon orange">🟡</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-andamento">--</div>
+<div class="kpi-label">Em Andamento</div>
+<div class="kpi-sub">Aguardando conclusão</div>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon green">✅</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-concluidos">--</div>
+<div class="kpi-label">Concluídos</div>
+<div class="kpi-sub">Finalizados hoje</div>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon blue">👷</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-colaboradores">--</div>
+<div class="kpi-label">Colaboradores em Campo</div>
+<div class="kpi-sub">Ativos hoje</div>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon purple">🚗</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-veiculos">--</div>
+<div class="kpi-label">Veículos em Uso</div>
+<div class="kpi-sub">Alocados hoje</div>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon green">⏱️</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-horas">--</div>
+<div class="kpi-label">Horas Totais Hoje</div>
+<div class="kpi-sub">Soma de todos os registros</div>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon blue">📐</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-media">--</div>
+<div class="kpi-label">Média por Serviço</div>
+<div class="kpi-sub">Horas médias</div>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon red">⚠️</div>
+<div class="kpi-info">
+<div class="kpi-value" id="kpi-abertos">--</div>
+<div class="kpi-label">Registros em Aberto</div>
+<div class="kpi-sub">Sem hora final</div>
+</div>
+</div>
+</div>
+<!-- GRÁFICOS ROW 1 -->
+<div class="charts-grid" style="margin-bottom:16px">
+<div class="card">
+<div class="card-header">
+<div class="card-title">📈 Apontamentos e Horas – Últimos 7 dias</div>
+</div>
+<div class="card-body">
+<div class="chart-container">
+<canvas id="chart-semana"></canvas>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<div class="card-title">🏗️ Horas por Site</div>
+</div>
+<div class="card-body">
+<div class="chart-container">
+<canvas id="chart-sites"></canvas>
+</div>
+</div>
+</div>
+</div>
+<!-- GRÁFICOS ROW 2 -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+<div class="card">
+<div class="card-header">
+<div class="card-title">🔧 Apontamentos por Serviço</div>
+</div>
+<div class="card-body">
+<div class="chart-container" style="height:220px">
+<canvas id="chart-servicos"></canvas>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<div class="card-title">📊 Resumo do Dia</div>
+</div>
+<div class="card-body">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f9fafb;border-radius:8px">
+<span style="font-size:13px;color:#6b7280">Taxa de conclusão</span>
+<span id="taxa-conclusao" style="font-size:16px;font-weight:800;color:#0e9f6e">--</span>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f9fafb;border-radius:8px">
+<span style="font-size:13px;color:#6b7280">Colaboradores únicos</span>
+<span id="kpi-col-unicos" style="font-size:16px;font-weight:800;color:#1a56db">--</span>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f9fafb;border-radius:8px">
+<span style="font-size:13px;color:#6b7280">Sites atendidos</span>
+<span id="kpi-sites-ativos" style="font-size:16px;font-weight:800;color:#7c3aed">--</span>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff3cd;border-radius:8px;border:1px solid #fcd34d">
+<span style="font-size:13px;color:#92400e">⚠️ Pendentes de conclusão</span>
+<span id="kpi-pendentes" style="font-size:16px;font-weight:800;color:#ff8800">--</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ÚLTIMOS APONTAMENTOS -->
+<div class="card">
+<div class="card-header">
+<div class="card-title">🕐 Últimos Apontamentos do Dia</div>
+<button class="btn btn-secondary btn-sm" onclick="Nav.go('apontamento')">Ver todos →</button>
+</div>
+<div class="card-body" style="padding:0">
+<div class="table-wrapper">
+<table>
+<thead>
+<tr>
+<th>Colaborador</th>
+<th>Site / CC</th>
+<th>Serviço</th>
+<th>Início</th>
+<th>Fim</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="tbody-ultimos">
+<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px">Carregando...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div><!-- /page-dashboard -->
+<!-- ======================================
+           PÁGINA: APONTAMENTOS
+           ====================================== -->
+<div class="page-section" id="page-apontamento" style="display:none">
+<div class="alert alert-success" id="alert-global-apt" style="margin-bottom:16px"></div>
+<!-- Filtro de data + botão novo -->
+<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+<div class="form-group" style="margin:0;min-width:200px">
+<label>📅 Data dos apontamentos</label>
+<input id="filtro-data-apt" type="date"/>
+</div>
+<button class="btn btn-primary" id="btn-novo-apontamento">
+            ➕ Novo Apontamento
+          </button>
+</div>
+<!-- Lista de apontamentos -->
+<div id="lista-apontamentos">
+<div class="empty-state">
+<div class="empty-icon">📋</div>
+<h3>Carregando apontamentos...</h3>
+</div>
+</div>
+</div><!-- /page-apontamento -->
+<!-- ======================================
+           PÁGINA: RELATÓRIOS
+           ====================================== -->
+<div class="page-section" id="page-relatorios" style="display:none">
+<!-- Filtros -->
+<div class="card" style="margin-bottom:20px">
+<div class="card-header">
+<div class="card-title">🔍 Filtros do Relatório</div>
+</div>
+<div class="card-body">
+<div class="form-grid">
+<div class="form-group">
+<label>📅 Data Início</label>
+<input id="rel-data-inicio" type="date"/>
+</div>
+<div class="form-group">
+<label>📅 Data Fim</label>
+<input id="rel-data-fim" type="date"/>
+</div>
+<div class="form-group">
+<label>👷 Colaborador</label>
+<select id="rel-colaborador"><option value="">Todos</option></select>
+</div>
+<div class="form-group">
+<label>🚗 Veículo</label>
+<select id="rel-veiculo"><option value="">Todos</option></select>
+</div>
+<div class="form-group">
+<label>🏗️ Site / Centro de Custo</label>
+<select id="rel-site"><option value="">Todos</option></select>
+</div>
+<div class="form-group">
+<label>🔧 Serviço / Atividade</label>
+<select id="rel-servico"><option value="">Todos</option></select>
+</div>
+<div class="form-group">
+<label>📌 Status</label>
+<select id="rel-status">
+<option value="">Todos</option>
+<option value="concluido">✅ Concluído</option>
+<option value="andamento">🟡 Em andamento</option>
+</select>
+</div>
+</div>
+<div style="display:flex;gap:10px;margin-top:8px">
+<button class="btn btn-primary" onclick="Pages.relatorios.gerar()">📊 Gerar Relatório</button>
+<button class="btn btn-secondary" onclick="Pages.relatorios.exportar()">⬇️ Exportar CSV</button>
+</div>
+</div>
+</div>
+<!-- Resultado -->
+<div class="card">
+<div class="card-header">
+<div class="card-title">📋 Resultado</div>
+</div>
+<div class="card-body">
+<div id="resultado-relatorio">
+<div class="empty-state">
+<div class="empty-icon">📊</div>
+<h3>Selecione os filtros e clique em "Gerar Relatório"</h3>
+</div>
+</div>
+</div>
+</div>
+</div><!-- /page-relatorios -->
+<!-- ======================================
+           PÁGINA: CADASTROS
+           ====================================== -->
+<div class="page-section" id="page-cadastros" style="display:none">
+<!-- Tabs -->
+<div class="tabs">
+<button class="tab-btn active" data-tab="colaboradores">👷 Colaboradores</button>
+<button class="tab-btn" data-tab="veiculos">🚗 Veículos</button>
+<button class="tab-btn" data-tab="sites">🏗️ Sites / CC</button>
+<button class="tab-btn" data-tab="servicos">🔧 Serviços</button>
+<button class="tab-btn" data-tab="usuarios">👤 Usuários</button>
+</div>
+<!-- Botão novo + tabela por aba -->
+<div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+<button class="btn btn-primary" id="btn-novo-cad" onclick="Pages.cadastros.abrirNovo(Pages.cadastros.activeTab)">
+            ➕ Novo Registro
+          </button>
+</div>
+<div class="card">
+<div class="card-body" style="padding:0">
+<div id="table-colaboradores"></div>
+<div id="table-veiculos" style="display:none"></div>
+<div id="table-sites" style="display:none"></div>
+<div id="table-servicos" style="display:none"></div>
+<div id="table-usuarios" style="display:none"></div>
+</div>
+</div>
+</div><!-- /page-cadastros -->
+</div><!-- /page-content -->
+</main>
+</div><!-- /app-layout -->
+<!-- ============================================
+     MODAL: NOVO APONTAMENTO
+     ============================================ -->
+<div class="modal-overlay" id="modal-apontamento">
+<div class="modal">
+<div class="modal-header">
+<div class="modal-title">📝 Novo Apontamento</div>
+<button class="modal-close" onclick="Utils.closeModal('modal-apontamento')">✕</button>
+</div>
+<div class="modal-body">
+<div class="alert alert-danger" id="alert-apontamento"></div>
+<form id="form-apontamento">
+<div class="form-grid">
+<div class="form-group full">
+<label>👷 Colaborador *</label>
+<select id="sel-colaborador" required="">
+<option value="">Selecione o colaborador...</option>
+</select>
+</div>
+<div class="form-group full">
+<label>🚗 Veículo (opcional)</label>
+<select id="sel-veiculo">
+<option value="">Nenhum</option>
+</select>
+</div>
+<div class="form-group full">
+<label>🏗️ Site / Centro de Custo *</label>
+<select id="sel-site" required="">
+<option value="">Selecione o site...</option>
+</select>
+</div>
+<div class="form-group full">
+<label>🔧 Serviço / Atividade *</label>
+<select id="sel-servico" required="">
+<option value="">Selecione o serviço...</option>
+</select>
+</div>
+<div class="form-group">
+<label>🕐 Hora Inicial *</label>
+<input id="hora-inicio" required="" type="time"/>
+</div>
+<div class="form-group">
+<label style="color:#9ca3af">🕔 Hora Final</label>
+<input disabled="" id="hora-fim-novo" placeholder="Preencher ao concluir" style="background:#f9fafb;color:#9ca3af" type="time"/>
+</div>
+<div class="form-group full">
+<label>💬 Observação (opcional)</label>
+<textarea id="obs-apontamento" placeholder="Descreva detalhes do serviço..." rows="2" style="resize:vertical"></textarea>
+</div>
+</div>
+<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;margin-top:4px;font-size:12px;color:#92400e">
+          ⚡ <strong>Dica:</strong> Registre agora com a hora inicial. Ao final do dia, volte e clique em <strong>"Concluir"</strong> para informar a hora final.
+        </div>
+</form>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="Utils.closeModal('modal-apontamento')">Cancelar</button>
+<button class="btn btn-primary" onclick="document.getElementById('form-apontamento').dispatchEvent(new Event('submit'))">
+        🌅 Registrar Apontamento
+      </button>
+</div>
+</div>
+</div>
+<!-- ============================================
+     MODAL: CONCLUIR APONTAMENTO
+     ============================================ -->
+<div class="modal-overlay" id="modal-conclusao">
+<div class="modal" style="max-width:400px">
+<div class="modal-header">
+<div class="modal-title">✅ Concluir Apontamento</div>
+<button class="modal-close" onclick="Utils.closeModal('modal-conclusao')">✕</button>
+</div>
+<div class="modal-body">
+<div class="alert alert-danger" id="alert-conclusao"></div>
+<input id="conclusao-id" type="hidden"/>
+<div class="form-group">
+<label>🕔 Hora Final *</label>
+<input id="hora-fim" required="" type="time"/>
+</div>
+<div style="background:#def7ec;border:1px solid #6ee7b7;border-radius:8px;padding:12px;font-size:12px;color:#065f46">
+        ✅ Ao confirmar, o apontamento será marcado como <strong>Concluído</strong>.
+      </div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="Utils.closeModal('modal-conclusao')">Cancelar</button>
+<button class="btn btn-success" onclick="Pages.apontamento.concluir()">
+        ✅ Confirmar Conclusão
+      </button>
+</div>
+</div>
+</div>
+<!-- ============================================
+     MODAL: CADASTRO GENÉRICO
+     ============================================ -->
+<div class="modal-overlay" id="modal-cadastro">
+<div class="modal">
+<div class="modal-header">
+<div class="modal-title" id="modal-cad-title">Novo Registro</div>
+<button class="modal-close" onclick="Utils.closeModal('modal-cadastro')">✕</button>
+</div>
+<div class="modal-body">
+<input id="modal-cad-tab" type="hidden"/>
+<input id="modal-cad-id" type="hidden"/>
+<div id="modal-cad-body"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="Utils.closeModal('modal-cadastro')">Cancelar</button>
+<button class="btn btn-primary" onclick="Pages.cadastros.salvarCadastro()">💾 Salvar</button>
+</div>
+</div>
+</div>
+<script src="app.js"></script>
+<script>
+  // Atualiza data na topbar
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+  });
+
+  // Atualiza título da topbar conforme página
+  const pageTitles = {
+    dashboard: ['Dashboard', 'Visão geral do dia'],
+    apontamento: ['Apontamentos', 'Registre e gerencie os apontamentos diários'],
+    relatorios: ['Relatórios', 'Analise os dados por período, colaborador, site e serviço'],
+    cadastros: ['Cadastros', 'Gerencie colaboradores, veículos, sites e serviços']
+  };
+
+  const origGo = Nav.go.bind(Nav);
+  Nav.go = function(page) {
+    origGo(page);
+    const [title, sub] = pageTitles[page] || ['', ''];
+    document.getElementById('page-title').textContent = title;
+    document.getElementById('page-subtitle').textContent = sub;
+
+    // Mostra/esconde tabelas de cadastro
+    if (page === 'cadastros') {
+      ['colaboradores','veiculos','sites','servicos','usuarios'].forEach(t => {
+        const el = document.getElementById(`table-${t}`);
+        if (el) el.style.display = t === 'colaboradores' ? 'block' : 'none';
+      });
+    }
+  };
+
+  // Tabs de cadastro
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      Pages.cadastros.activeTab = tab;
+      ['colaboradores','veiculos','sites','servicos','usuarios'].forEach(t => {
+        const el = document.getElementById(`table-${t}`);
+        if (el) el.style.display = t === tab ? 'block' : 'none';
+      });
+      Pages.cadastros.loadTab(tab);
+    });
+  });
+
+  // Atualiza KPIs extras do dashboard
+  const origRender = Pages.dashboard.render.bind(Pages.dashboard);
+  Pages.dashboard.render = function(data) {
+    origRender(data);
+    const total = data.totalHoje || 0;
+    const conc = data.concluidos || 0;
+    const taxa = total > 0 ? Math.round((conc / total) * 100) : 0;
+    const taxaEl = document.getElementById('taxa-conclusao');
+    if (taxaEl) taxaEl.textContent = taxa + '%';
+    const colUn = document.getElementById('kpi-col-unicos');
+    if (colUn) colUn.textContent = data.colaboradoresAtivos || '--';
+    const sitesAt = document.getElementById('kpi-sites-ativos');
+    if (sitesAt) sitesAt.textContent = (data.porSite || []).length;
+    const pend = document.getElementById('kpi-pendentes');
+    if (pend) pend.textContent = data.registrosAbertos || 0;
+  };
+</script>
+</body>
+</html>
