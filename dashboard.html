@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
+<title>S.P.A.D.O — Sistema de Planejamento e Apontamento Diário Operacional</title>
+<meta content="#10243A" name="theme-color"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;color:#2C2C2C}
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ═══ TOPBAR ═══ */
+.topbar{background:linear-gradient(135deg,#0f2238 0%,#1a3a5c 60%,#2563a8 100%);color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.3);position:sticky;top:0;z-index:200}
+.topbar-top{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;border-bottom:1px solid rgba(255,255,255,.1)}
+.tb-brand .tb-title{font-size:17px;font-weight:800;letter-spacing:.5px;color:#fff}
+.tb-brand .tb-subtitle{font-size:10px;color:#f0c040;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.tb-right{display:flex;align-items:center;gap:14px}
+.tb-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.15)}
+.tb-badge.on{background:rgba(34,197,94,.2);color:#86efac;border-color:rgba(34,197,94,.3)}
+.tb-user{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;color:#fff}
+.tb-avatar{width:26px;height:26px;background:#d4a017;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.tb-logout{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all .2s}
+.tb-logout:hover{background:rgba(255,255,255,.25)}
+
+/* ═══ NAVBAR ═══ */
+.navbar{display:flex;align-items:stretch;padding:0;overflow-x:auto;gap:0;background:rgba(0,0,0,.2)}
+.navbar::-webkit-scrollbar{height:3px}
+.navbar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:2px}
+.nav-grp{display:flex;align-items:stretch;position:relative;border-right:1px solid rgba(255,255,255,.12);flex-shrink:0}
+.nav-grp:last-child{border-right:none}
+.nav-grp-label{position:absolute;top:0;left:0;right:0;text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.3);font-weight:700;padding-top:2px;pointer-events:none}
+.ni{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 14px;cursor:pointer;font-size:11px;font-weight:600;color:rgba(255,255,255,.65);border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;background:none;border-left:none;border-right:none;border-top:none;min-width:56px;text-decoration:none;font-family:inherit}
+.ni.has-label{padding-top:14px}
+.ni:hover{color:#fff;background:rgba(255,255,255,.08)}
+.ni.active{color:#fff;border-bottom-color:#f0c040;background:rgba(255,255,255,.12)}
+.ni .ico{font-size:17px}
+.ni .lbl{font-size:10px;letter-spacing:.3px}
+
+/* ═══ CONTENT ═══ */
+.content{flex:1;padding:22px 28px;padding-bottom:70px}
+
+/* ═══ RODAPÉ ═══ */
+.rodape{background:linear-gradient(135deg,#0f2238 0%,#1a3a5c 100%);color:#fff;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:fixed;bottom:0;left:0;right:0;z-index:100}
+.rod-txt{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.5px}
+.rod-center{text-align:center}
+.rod-azul{font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.5px}
+
+/* ═══ TOAST + LOADBAR ═══ */
+.toast{position:fixed;bottom:60px;right:22px;background:#10243B;color:#fff;padding:11px 16px;border-radius:9px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:9px;max-width:340px}
+.toast.show{transform:translateY(0);opacity:1}.toast.ok{background:#166534}.toast.err{background:#991b1b}.toast.warn{background:#92400e}
+#loadBar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#10243B,#4da3ff,#10243B);background-size:200%;animation:lb 1.2s linear infinite;z-index:9999;transition:opacity .3s;opacity:0;width:100%}
+@keyframes lb{0%{background-position:0%}100%{background-position:200%}}
+
+/* ═══ KPI ═══ */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:13px;margin-bottom:18px}
+.kpi{background:#fff;border-radius:11px;padding:15px;display:flex;align-items:center;gap:12px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:all .2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.09)}
+.kpi-ico{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.ic-az{background:rgba(16,36,59,.08)}.ic-vd{background:rgba(34,197,94,.1)}.ic-am{background:rgba(245,158,11,.1)}.ic-vm{background:rgba(239,68,68,.1)}.ic-rx{background:rgba(139,92,246,.1)}.ic-ci{background:rgba(8,145,178,.1)}.ic-la{background:rgba(249,115,22,.1)}
+.kpi-val h3{font-size:26px;font-weight:800;color:#10243B;line-height:1}
+.kpi-val p{font-size:11.5px;color:#64748b;margin-top:2px}
+.kpi-val small{font-size:10px;color:#94a3b8;font-weight:600}
+
+/* ═══ CARDS ═══ */
+.card{background:#fff;border-radius:11px;padding:18px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:16px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:2px solid #F0F4F8}
+.card-hd h2{font-size:14px;font-weight:700;color:#10243B;display:flex;align-items:center;gap:7px}
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.chart-card{background:#fff;border-radius:11px;padding:16px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.chart-card h3{font-size:13px;font-weight:700;color:#10243B;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.chart-box{position:relative;height:240px}
+
+/* ═══ TABELAS ═══ */
+.tbl-wrap{overflow-x:auto;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{background:#10243B;color:#fff;padding:10px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+thead th:first-child{border-radius:7px 0 0 0}thead th:last-child{border-radius:0 7px 0 0}
+tbody tr{border-bottom:1px solid #e2e8f0;transition:background .15s}
+tbody tr:hover{background:rgba(16,36,59,.03)}
+tbody td{padding:9px 12px;vertical-align:middle}
+
+/* ═══ BADGES ═══ */
+.b{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.b-vd{background:#dcfce7;color:#166534}.b-am{background:#fef9c3;color:#854d0e}.b-vm{background:#fee2e2;color:#991b1b}
+.b-az{background:#dbeafe;color:#1e40af}.b-gz{background:#f1f5f9;color:#475569}.b-rx{background:#f3e8ff;color:#6b21a8}.b-la{background:#ffedd5;color:#9a3412}
+
+/* STATUS */
+.status-andamento{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#d97706}
+.status-andamento::before{content:'';width:7px;height:7px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite;flex-shrink:0}
+.status-concluido{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#166534}
+.status-concluido::before{content:'';width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.status-planejado{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#1e40af}
+.status-planejado::before{content:'';width:7px;height:7px;border-radius:50%;background:#3b82f6;flex-shrink:0}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(245,158,11,.2)}50%{box-shadow:0 0 0 6px rgba(245,158,11,.08)}}
+
+/* ═══ FORMULÁRIOS ═══ */
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:13px}
+.fi{display:flex;flex-direction:column;gap:5px}.fi.full{grid-column:1/-1}
+.fi label{font-size:10.5px;font-weight:700;color:#10243B;text-transform:uppercase;letter-spacing:.4px}
+.fi input,.fi select,.fi textarea{padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;color:#2C2C2C;background:#F0F4F8;font-family:inherit;transition:all .2s;outline:none}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:#10243B;background:#fff;box-shadow:0 0 0 3px rgba(16,36,59,.07)}
+.fi textarea{resize:vertical;min-height:72px}
+
+/* ═══ BOTÕES ═══ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:inherit;text-decoration:none}
+.btn-p{background:#10243B;color:#fff}.btn-p:hover{background:#1a3a5c;transform:translateY(-1px);box-shadow:0 4px 10px rgba(16,36,59,.25)}
+.btn-s{background:#22c55e;color:#fff}.btn-s:hover{background:#16a34a}
+.btn-d{background:#ef4444;color:#fff}.btn-d:hover{background:#dc2626}
+.btn-o{background:transparent;color:#10243B;border:1.5px solid #10243B}.btn-o:hover{background:#10243B;color:#fff}
+.btn-warn{background:#f59e0b;color:#fff}.btn-warn:hover{background:#d97706}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+
+/* ═══ TABS ═══ */
+.tabs{display:flex;gap:3px;margin-bottom:16px;border-bottom:2px solid #e2e8f0}
+.tab{padding:8px 15px;border:none;background:transparent;font-size:12.5px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;border-radius:6px 6px 0 0;font-family:inherit}
+.tab:hover{color:#10243B;background:rgba(16,36,59,.04)}.tab.active{color:#10243B;border-bottom-color:#10243B;background:rgba(16,36,59,.05)}
+
+/* ═══ MODAL ═══ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:13px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.22);transform:scale(.95);transition:transform .2s}
+.modal-bg.open .modal{transform:scale(1)}
+.modal-hd{padding:15px 20px;background:#10243B;border-radius:13px 13px 0 0;display:flex;align-items:center;justify-content:space-between}
+.modal-hd h3{color:#fff;font-size:14px;font-weight:700}
+.modal-hd button{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;opacity:.8;line-height:1}
+.modal-hd button:hover{opacity:1}
+.modal-bd{padding:20px}.modal-ft{padding:13px 20px;border-top:1px solid #e2e8f0;display:flex;gap:9px;justify-content:flex-end}
+
+/* ═══ EMPTY ═══ */
+.empty{text-align:center;padding:44px 20px;color:#64748b}
+.empty .ico{font-size:42px;margin-bottom:11px}
+.empty h3{font-size:15px;font-weight:600;margin-bottom:5px}
+.empty p{font-size:12.5px;color:#94a3b8}
+
+/* ═══ ALERTAS ═══ */
+.alert{padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.al-w{background:#fef3c7;color:#92400e;border-left:4px solid #f59e0b}
+.al-d{background:#fee2e2;color:#991b1b;border-left:4px solid #ef4444}
+.al-s{background:#dcfce7;color:#166534;border-left:4px solid #22c55e}
+.al-i{background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6}
+
+/* ═══ MULTI-SELECT ═══ */
+.multi-wrap{position:relative}
+.multi-select-box{border:1.5px solid #e2e8f0;border-radius:8px;background:#F0F4F8;min-height:42px;padding:6px 10px;cursor:text;transition:all .2s}
+.multi-select-box:focus-within{border-color:#10243B;background:#fff;box-shadow:0 0 0 3px rgba(16,36,59,.07)}
+.chips-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:#10243B;color:#fff;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600}
+.chip-remove{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:15px;line-height:1;padding:0}
+.chip-remove:hover{color:#fff}
+.multi-search{border:none;background:transparent;outline:none;font-size:13px;font-family:inherit;color:#2C2C2C;width:100%;min-width:120px;padding:2px 0}
+.multi-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #10243B;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:3000;max-height:200px;overflow-y:auto;display:none;margin-top:2px}
+.multi-dropdown.open{display:block}
+.multi-opt{padding:9px 13px;font-size:13px;cursor:pointer;transition:background .15s}
+.multi-opt:hover{background:#F0F4F8}
+.multi-opt.selected{background:#dbeafe;color:#1e40af;font-weight:600}
+
+/* ═══ HORA REGISTRO ═══ */
+.hora-registro-box{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#0f2238,#1a3a5c);border-radius:8px;padding:10px 16px;margin-bottom:14px}
+.hora-registro-val{font-size:22px;font-weight:800;color:#f0c040;letter-spacing:2px}
+
+/* ═══ VISÃO GERAL - CARDS DE SITE ═══ */
+.site-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.site-card{background:#fff;border-radius:13px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;transition:all .2s}
+.site-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);transform:translateY(-2px)}
+.site-card-hd{background:linear-gradient(135deg,#10243B,#1a3a5c);padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.site-card-nome{font-size:14px;font-weight:800;color:#fff}
+.site-card-cod{font-size:10px;color:#f0c040;font-weight:700;letter-spacing:.5px;margin-top:2px}
+.site-card-body{padding:14px 16px}
+.site-card-section{margin-bottom:12px}
+.site-card-section:last-child{margin-bottom:0}
+.site-section-label{font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.site-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#F0F4F8;border-radius:7px;margin-bottom:5px;font-size:12px}
+.site-item:last-child{margin-bottom:0}
+.site-item-icon{font-size:14px;flex-shrink:0}
+.site-item-info{flex:1}
+.site-item-nome{font-weight:700;color:#10243B;font-size:12px}
+.site-item-sub{font-size:10.5px;color:#64748b;margin-top:1px}
+.site-card-empty{text-align:center;padding:20px;color:#94a3b8;font-size:12px}
+
+/* ═══ PLANEJAMENTO CARDS ═══ */
+.plan-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:11px;padding:14px 18px;margin-bottom:10px;transition:all .2s}
+.plan-card:hover{border-color:#10243B;box-shadow:0 2px 10px rgba(16,36,59,.08)}
+.plan-card.planejado{border-left:4px solid #3b82f6}
+.plan-card.em_execucao{border-left:4px solid #f59e0b;background:#fffbeb}
+.plan-card.concluido{border-left:4px solid #22c55e;background:#f0fdf4}
+.plan-card.nao_executado{border-left:4px solid #ef4444;background:#fef2f2}
+
+/* ═══ APONTAMENTO VALIDAÇÃO ═══ */
+.apt-val-card{background:#fff;border-radius:11px;border:1px solid #e2e8f0;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.apt-val-hd{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0F4F8}
+.apt-val-body{padding:14px 16px}
+.apt-val-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.apt-val-col{background:#F0F4F8;border-radius:8px;padding:12px}
+.apt-val-col-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.apt-val-col.planejado .apt-val-col-title{color:#1e40af}
+.apt-val-col.realizado .apt-val-col-title{color:#166534}
+.apt-val-item{font-size:12px;color:#374151;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.apt-val-item strong{color:#10243B}
+
+/* ═══ RESUMO DASHBOARD ═══ */
+.resumo-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#F0F4F8;border-radius:8px;margin-bottom:8px}
+.resumo-item:last-child{margin-bottom:0}
+.resumo-label{font-size:12.5px;color:#64748b;font-weight:500}
+.resumo-val{font-size:16px;font-weight:800;color:#10243B}
+.resumo-item.warn{background:#fef3c7}.resumo-item.warn .resumo-val{color:#d97706}
+
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+@media(max-width:768px){.content{padding:14px;padding-bottom:70px}.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}.ni .lbl{display:none}.ni{min-width:42px;padding:5px 8px}.site-cards-grid{grid-template-columns:1fr}.apt-val-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="loadBar"></div>
+<div class="toast" id="toast"></div>
+<div id="app">
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar">
+<div class="topbar-top">
+<div class="tb-brand">
+<div class="tb-title">S.P.A.D.O — Sistema de Planejamento e Apontamento Diário Operacional</div>
+<div class="tb-subtitle">Grupo FIBRAVIT</div>
+</div>
+<div class="tb-right">
+<span class="tb-badge on" id="sheetsBadge">⬤ Sheets conectado</span>
+<div class="tb-user">
+<div class="tb-avatar" id="user-avatar">A</div>
+<span id="user-name">Usuário</span>
+</div>
+<button class="tb-logout" id="btn-logout">🚪 Sair</button>
+</div>
+</div>
+<nav class="navbar" id="navbar">
+<div class="nav-grp">
+<span class="nav-grp-label">Início</span>
+<button class="ni has-label active" data-page="dashboard"><span class="ico">📊</span><span class="lbl">Dashboard</span></button>
+</div>
+<div class="nav-grp">
+<span class="nav-grp-label">Operação</span>
+<button class="ni has-label" data-page="visao"><span class="ico">🗺️</span><span class="lbl">Visão Geral</span></button>
+<button class="ni has-label" data-page="planejamento"><span class="ico">📋</span><span class="lbl">Planejamento</span></button>
+<button class="ni has-label" data-page="apontamento"><span class="ico">✅</span><span class="lbl">Apontamento</span></button>
+</div>
+<div class="nav-grp">
+<span class="nav-grp-label">Gestão</span>
+<button class="ni has-label" data-page="relatorios"><span class="ico">📈</span><span class="lbl">Relatórios</span></button>
+<button class="ni has-label" data-page="cadastros"><span class="ico">⚙️</span><span class="lbl">Cadastros</span></button>
+</div>
+</nav>
+</header>
+<!-- ═══ CONTENT ═══ -->
+<main class="content">
+<div class="alert al-s" id="alert-global" style="display:none"></div>
+<!-- ════════════════════════════════
+     1. DASHBOARD
+════════════════════════════════ -->
+<div class="page-section" id="page-dashboard">
+<!-- FILTRO PERÍODO -->
+<div style="background:#fff;border-radius:11px;padding:14px 18px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:18px;display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px">
+<div style="display:flex;align-items:center;gap:8px;margin-right:4px">
+<span style="font-size:18px">📅</span>
+<div>
+<div style="font-size:11px;font-weight:700;color:#10243B;text-transform:uppercase;letter-spacing:.4px">Período de Análise</div>
+<div style="font-size:10px;color:#94a3b8;margin-top:1px">Filtre os indicadores pelo período desejado</div>
+</div>
+</div>
+<div class="fi" style="margin:0;min-width:150px"><label>Data Início</label><input id="dash-data-inicio" type="date"/></div>
+<div class="fi" style="margin:0;min-width:150px"><label>Data Fim</label><input id="dash-data-fim" type="date"/></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-p btn-sm" onclick="Dashboard.aplicarFiltro()">📊 Aplicar</button>
+<button class="btn btn-o btn-sm" onclick="Dashboard.atalho('hoje')">Hoje</button>
+<button class="btn btn-o btn-sm" onclick="Dashboard.atalho('semana')">Esta Semana</button>
+<button class="btn btn-o btn-sm" onclick="Dashboard.atalho('mes')">Este Mês</button>
+<button class="btn btn-o btn-sm" onclick="Dashboard.atalho('mes_anterior')">Mês Anterior</button>
+</div>
+<div id="dash-periodo-label" style="margin-left:auto;font-size:11px;color:#64748b;font-weight:600;background:#F0F4F8;padding:5px 12px;border-radius:20px">📅 Hoje</div>
+</div>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-ico ic-az">📋</div><div class="kpi-val"><h3 id="kpi-total-hoje">--</h3><p>Planejamentos</p><small>No período</small></div></div>
+<div class="kpi"><div class="kpi-ico ic-vd">✅</div><div class="kpi-val"><h3 id="kpi-concluidos">--</h3><p>Concluídos</p><small>Finalizados</small></div></div>
+<div class="kpi"><div class="kpi-ico ic-am">🟡</div><div class="kpi-val"><h3 id="kpi-andamento">--</h3><p>Em Execução</p><small>Em andamento</small></div></div>
+<div class="kpi"><div class="kpi-ico ic-az">📋</div><div class="kpi-val"><h3 id="kpi-planejados">--</h3><p>Planejados</p><small>Aguardando início</small></div></div>
+<div class="kpi"><div class="kpi-ico ic-az">👷</div><div class="kpi-val"><h3 id="kpi-colaboradores">--</h3><p>Colaboradores</p><small>Em campo</small></div></div>
+<div class="kpi"><div class="kpi-ico ic-rx">🚗</div><div class="kpi-val"><h3 id="kpi-veiculos">--</h3><p>Veículos</p><small>Alocados</small></div></div>
+<div class="kpi"><div class="kpi-ico ic-vd">⏱️</div><div class="kpi-val"><h3 id="kpi-horas">--</h3><p>Horas Totais</p><small>Executadas</small></div></div>
+<div class="kpi"><div class="kpi-ico ic-vm">⚠️</div><div class="kpi-val"><h3 id="kpi-abertos">--</h3><p>Não Executados</p><small>Sem conclusão</small></div></div>
+</div>
+<div class="charts-grid">
+<div class="chart-card"><h3>📈 Planejamentos e Execuções – Últimos 7 dias</h3><div class="chart-box"><canvas id="chart-semana"></canvas></div></div>
+<div class="chart-card"><h3>🏗️ Horas por Site</h3><div class="chart-box"><canvas id="chart-sites"></canvas></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+<div class="chart-card"><h3>🔧 Apontamentos por Serviço</h3><div class="chart-box" style="height:200px"><canvas id="chart-servicos"></canvas></div></div>
+<div class="chart-card">
+<h3>📊 Resumo do Período</h3>
+<div class="resumo-item"><span class="resumo-label">Taxa de conformidade</span><span class="resumo-val" id="taxa-conclusao" style="color:#22c55e">--</span></div>
+<div class="resumo-item"><span class="resumo-label">Colaboradores únicos</span><span class="resumo-val" id="kpi-col-unicos">--</span></div>
+<div class="resumo-item"><span class="resumo-label">Sites atendidos</span><span class="resumo-val" id="kpi-sites-ativos" style="color:#7c3aed">--</span></div>
+<div class="resumo-item warn"><span class="resumo-label">⚠️ Com alteração</span><span class="resumo-val" id="kpi-pendentes">--</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-hd"><h2>🕐 Últimos Registros</h2><button class="btn btn-o btn-sm" onclick="SAD.nav('visao')">Visão Geral →</button></div>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>Colaborador(es)</th><th>Site / CC</th><th>Serviço</th><th>H.Registro</th><th>Início</th><th>Fim</th><th>Conformidade</th></tr></thead>
+<tbody id="tbody-ultimos"><tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:28px">Carregando...</td></tr></tbody>
+</table>
+</div>
+</div>
+</div><!-- /dashboard -->
+<!-- ════════════════════════════════
+     2. VISÃO GERAL (tempo real)
+════════════════════════════════ -->
+<div class="page-section" id="page-visao" style="display:none">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+<div>
+<h2 style="font-size:16px;font-weight:800;color:#10243B">🗺️ Visão Geral por Centro de Custo</h2>
+<p style="font-size:12px;color:#64748b;margin-top:3px">Atualização automática a cada 60 segundos</p>
+</div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<div class="fi" style="margin:0;min-width:160px"><label>📅 Data</label><input id="visao-data" type="date"/></div>
+<button class="btn btn-p" onclick="Visao.carregar()">🔄 Atualizar</button>
+<span id="visao-ultima-atualizacao" style="font-size:11px;color:#94a3b8;font-weight:600"></span>
+</div>
+</div>
+<!-- RESUMO RÁPIDO -->
+<div id="visao-resumo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px">
+</div>
+<!-- CARDS DOS SITES -->
+<div class="site-cards-grid" id="visao-cards">
+<div class="empty"><div class="ico">🗺️</div><h3>Carregando visão geral...</h3></div>
+</div>
+</div><!-- /visao -->
+<!-- ════════════════════════════════
+     3. PLANEJAMENTO
+════════════════════════════════ -->
+<div class="page-section" id="page-planejamento" style="display:none">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+<div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+<div class="fi" style="margin:0;min-width:180px"><label>📅 Data do Planejamento</label><input id="plan-data-filtro" type="date"/></div>
+<button class="btn btn-o btn-sm" onclick="Planejamento.carregar()">🔍 Buscar</button>
+</div>
+<button class="btn btn-p" id="btn-novo-planejamento">➕ Novo Planejamento</button>
+</div>
+<!-- RESUMO DO DIA PLANEJADO -->
+<div id="plan-resumo" style="display:none;margin-bottom:16px">
+<div id="plan-resumo-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px"></div>
+</div>
+<div id="lista-planejamentos">
+<div class="empty"><div class="ico">📋</div><h3>Selecione uma data para ver os planejamentos</h3></div>
+</div>
+</div><!-- /planejamento -->
+<!-- ════════════════════════════════
+     4. APONTAMENTO (VALIDAÇÃO)
+════════════════════════════════ -->
+<div class="page-section" id="page-apontamento" style="display:none">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+<div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+<div class="fi" style="margin:0;min-width:180px"><label>📅 Data do Apontamento</label><input id="apt-data-filtro" type="date"/></div>
+<button class="btn btn-o btn-sm" onclick="Apontamento.carregar()">🔍 Buscar</button>
+</div>
+<button class="btn btn-p" id="btn-novo-apontamento-avulso">➕ Apontamento Avulso</button>
+</div>
+<!-- LEGENDA -->
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;background:#fff;padding:12px 16px;border-radius:10px;border:1px solid #e2e8f0">
+<span style="font-size:11.5px;font-weight:600;color:#64748b">Legenda:</span>
+<span class="b b-az">📋 Planejado</span>
+<span class="b b-am">🟡 Em Execução</span>
+<span class="b b-vd">✅ Conforme</span>
+<span class="b b-warn" style="background:#fef3c7;color:#92400e">⚠️ Com Alteração</span>
+<span class="b b-vm">❌ Não Executado</span>
+</div>
+<div id="lista-apontamentos">
+<div class="empty"><div class="ico">✅</div><h3>Selecione uma data para validar os apontamentos</h3><p>Os planejamentos do dia aparecerão aqui para validação</p></div>
+</div>
+</div><!-- /apontamento -->
+<!-- ════════════════════════════════
+     5. RELATÓRIOS
+════════════════════════════════ -->
+<div class="page-section" id="page-relatorios" style="display:none">
+<div class="card">
+<div class="card-hd"><h2>🔍 Filtros do Relatório</h2></div>
+<div class="fg">
+<div class="fi"><label>📅 Data Início</label><input id="rel-data-inicio" type="date"/></div>
+<div class="fi"><label>📅 Data Fim</label><input id="rel-data-fim" type="date"/></div>
+<div class="fi"><label>👷 Colaborador</label><select id="rel-colaborador"><option value="">Todos</option></select></div>
+<div class="fi"><label>🚗 Veículo</label><select id="rel-veiculo"><option value="">Todos</option></select></div>
+<div class="fi"><label>🏗️ Site / Centro de Custo</label><select id="rel-site"><option value="">Todos</option></select></div>
+<div class="fi"><label>🔧 Serviço / Atividade</label><select id="rel-servico"><option value="">Todos</option></select></div>
+<div class="fi"><label>📌 Conformidade</label>
+<select id="rel-status">
+<option value="">Todos</option>
+<option value="conforme">✅ Conforme</option>
+<option value="alteracao">⚠️ Com Alteração</option>
+<option value="nao_executado">❌ Não Executado</option>
+<option value="planejado">📋 Planejado</option>
+<option value="em_execucao">🟡 Em Execução</option>
+</select>
+</div>
+</div>
+<div style="display:flex;gap:10px;margin-top:16px">
+<button class="btn btn-p" onclick="Pages.relatorios.gerar()">📊 Gerar Relatório</button>
+<button class="btn btn-o" onclick="Pages.relatorios.exportar()">⬇️ Exportar CSV</button>
+</div>
+</div>
+<div class="card">
+<div class="card-hd"><h2>📋 Resultado</h2></div>
+<div id="resultado-relatorio"><div class="empty"><div class="ico">📊</div><h3>Selecione os filtros e clique em "Gerar Relatório"</h3></div></div>
+</div>
+</div><!-- /relatorios -->
+<!-- ════════════════════════════════
+     6. CADASTROS
+════════════════════════════════ -->
+<div class="page-section" id="page-cadastros" style="display:none">
+<div class="tabs">
+<button class="tab active" data-tab="colaboradores">👷 Colaboradores</button>
+<button class="tab" data-tab="veiculos">🚗 Veículos</button>
+<button class="tab" data-tab="sites">🏗️ Sites / CC</button>
+<button class="tab" data-tab="servicos">🔧 Serviços</button>
+<button class="tab" data-tab="usuarios">👤 Usuários</button>
+</div>
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+<button class="btn btn-p" onclick="Pages.cadastros.abrirNovo(Pages.cadastros.activeTab)">➕ Novo Registro</button>
+</div>
+<div class="card" style="padding:0">
+<div id="table-colaboradores"></div>
+<div id="table-veiculos" style="display:none"></div>
+<div id="table-sites" style="display:none"></div>
+<div id="table-servicos" style="display:none"></div>
+<div id="table-usuarios" style="display:none"></div>
+</div>
+</div><!-- /cadastros -->
+</main>
+<!-- ═══ RODAPÉ ═══ -->
+<footer class="rodape">
+<div class="rod-txt">S.P.A.D.O — SISTEMA DE PLANEJAMENTO E APONTAMENTO DIÁRIO OPERACIONAL — <span style="color:#f0c040;font-weight:800">GRUPO FIBRAVIT</span></div>
+<div class="rod-center">
+<div style="font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.28)">Desenvolvido por:</div>
+<div style="font-size:11px;font-weight:600;letter-spacing:1px;color:rgba(255,255,255,.4)">EVEREST CONSULTORIA</div>
+<div style="font-size:9px;font-style:italic;color:rgba(255,255,255,.22)">em Gestão Empresarial</div>
+</div>
+<div class="rod-azul">v2.0 · 2026</div>
+</footer>
+</div><!-- /app -->
+<!-- ═══ MODAL: NOVO PLANEJAMENTO ═══ -->
+<div class="modal-bg" id="modal-planejamento">
+<div class="modal">
+<div class="modal-hd"><h3>📋 Novo Planejamento</h3><button onclick="SAD.closeModal('modal-planejamento')">✕</button></div>
+<div class="modal-bd">
+<div class="alert al-d" id="alert-planejamento" style="display:none"></div>
+<form id="form-planejamento">
+<div class="fg">
+<div class="fi"><label>📅 Data *</label><input id="plan-data" required="" type="date"/></div>
+<div class="fi full">
+<label>👷 Colaboradores * <span style="font-weight:400;color:#64748b;text-transform:none;letter-spacing:0;font-size:10px">(um ou mais)</span></label>
+<div class="multi-wrap">
+<div class="multi-select-box" id="multi-plan-box">
+<div class="chips-wrap" id="chips-plan-colaboradores"></div>
+<input autocomplete="off" class="multi-search" id="multi-plan-search" placeholder="Buscar colaborador..."/>
+</div>
+<div class="multi-dropdown" id="multi-plan-dropdown"></div>
+</div>
+<input id="plan-colaboradores-ids" type="hidden"/>
+</div>
+<div class="fi full"><label>🚗 Veículo (opcional)</label><select id="plan-veiculo"><option value="">Nenhum</option></select></div>
+<div class="fi full"><label>🏗️ Site / Centro de Custo *</label><select id="plan-site" required=""><option value="">Selecione...</option></select></div>
+<div class="fi full"><label>🔧 Serviço / Atividade *</label><select id="plan-servico" required=""><option value="">Selecione...</option></select></div>
+<div class="fi"><label>🕐 Hora Início Prevista</label><input id="plan-hora-inicio" type="time"/></div>
+<div class="fi"><label>🕔 Hora Fim Prevista</label><input id="plan-hora-fim" type="time"/></div>
+<div class="fi full"><label>💬 Observação (opcional)</label><textarea id="plan-obs" placeholder="Detalhes do planejamento..."></textarea></div>
+</div>
+</form>
+</div>
+<div class="modal-ft">
+<button class="btn btn-o" onclick="SAD.closeModal('modal-planejamento')">Cancelar</button>
+<button class="btn btn-p" onclick="Planejamento.salvar()">📋 Salvar Planejamento</button>
+</div>
+</div>
+</div>
+<!-- ═══ MODAL: VALIDAR APONTAMENTO ═══ -->
+<div class="modal-bg" id="modal-validar">
+<div class="modal">
+<div class="modal-hd"><h3 id="modal-validar-title">✅ Validar Apontamento</h3><button onclick="SAD.closeModal('modal-validar')">✕</button></div>
+<div class="modal-bd">
+<div class="alert al-d" id="alert-validar" style="display:none"></div>
+<input id="validar-plan-id" type="hidden"/>
+<!-- O QUE FOI PLANEJADO -->
+<div style="background:#dbeafe;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+<div style="font-size:10px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📋 O que foi planejado</div>
+<div id="validar-planejado-info" style="font-size:12.5px;color:#1e3a8a;line-height:1.8"></div>
+</div>
+<!-- STATUS DE CONFORMIDADE -->
+<div class="fi" style="margin-bottom:14px">
+<label>📌 Status de Conformidade *</label>
+<select id="validar-status" onchange="Apontamento.onStatusChange(this.value)">
+<option value="">Selecione...</option>
+<option value="conforme">✅ Conforme — executado exatamente como planejado</option>
+<option value="alteracao">⚠️ Com Alteração — houve mudança em algum item</option>
+<option value="nao_executado">❌ Não Executado — não foi realizado</option>
+</select>
+</div>
+<!-- CAMPOS HORA (sempre visíveis) -->
+<div class="fg" id="validar-horas-section">
+<div class="fi"><label>🕐 Hora Inicial Real *</label><input id="validar-hora-inicio" type="time"/></div>
+<div class="fi"><label>🕔 Hora Final Real</label><input id="validar-hora-fim" type="time"/></div>
+</div>
+<!-- CAMPOS DE ALTERAÇÃO (só aparecem se "Com Alteração") -->
+<div id="validar-alteracao-section" style="display:none;margin-top:14px">
+<div style="background:#fef3c7;border-left:4px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400e">
+          ⚠️ Informe o que foi <strong>realmente executado</strong> (deixe em branco o que não mudou)
+        </div>
+<div class="fg">
+<div class="fi full">
+<label>👷 Colaboradores Reais (se diferente)</label>
+<div class="multi-wrap">
+<div class="multi-select-box" id="multi-apt-box">
+<div class="chips-wrap" id="chips-apt-colaboradores"></div>
+<input autocomplete="off" class="multi-search" id="multi-apt-search" placeholder="Buscar colaborador..."/>
+</div>
+<div class="multi-dropdown" id="multi-apt-dropdown"></div>
+</div>
+<input id="apt-colaboradores-ids" type="hidden"/>
+</div>
+<div class="fi full"><label>🚗 Veículo Real (se diferente)</label><select id="apt-veiculo"><option value="">Mesmo do planejamento</option></select></div>
+<div class="fi full"><label>🏗️ Site Real (se diferente)</label><select id="apt-site"><option value="">Mesmo do planejamento</option></select></div>
+<div class="fi full"><label>🔧 Serviço Real (se diferente)</label><select id="apt-servico"><option value="">Mesmo do planejamento</option></select></div>
+</div>
+</div>
+<!-- MOTIVO NÃO EXECUTADO -->
+<div id="validar-nao-exec-section" style="display:none;margin-top:14px">
+<div class="fi">
+<label>❌ Motivo do Não Executado *</label>
+<textarea id="validar-motivo" placeholder="Descreva o motivo pelo qual não foi executado..."></textarea>
+</div>
+</div>
+<!-- OBSERVAÇÃO GERAL -->
+<div class="fi" style="margin-top:14px">
+<label>💬 Observação Geral</label>
+<textarea id="validar-obs" placeholder="Observações adicionais..."></textarea>
+</div>
+<!-- HORA DO REGISTRO -->
+<div style="background:linear-gradient(135deg,#0f2238,#1a3a5c);border-radius:8px;padding:10px 16px;margin-top:14px;display:flex;align-items:center;justify-content:space-between">
+<div>
+<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px">🕐 Hora do Registro</div>
+<div class="hora-registro-val" id="hora-registro-display">--:--</div>
+</div>
+<div style="font-size:11px;color:rgba(255,255,255,.4)">🔒 Automático</div>
+</div>
+<input id="hora-registro-valor" type="hidden"/>
+</div>
+<div class="modal-ft">
+<button class="btn btn-o" onclick="SAD.closeModal('modal-validar')">Cancelar</button>
+<button class="btn btn-p" onclick="Apontamento.salvarValidacao()">✅ Confirmar Apontamento</button>
+</div>
+</div>
+</div>
+<!-- ═══ MODAL: APONTAMENTO AVULSO ═══ -->
+<div class="modal-bg" id="modal-avulso">
+<div class="modal">
+<div class="modal-hd"><h3>📝 Apontamento Avulso</h3><button onclick="SAD.closeModal('modal-avulso')">✕</button></div>
+<div class="modal-bd">
+<div class="alert al-i" style="display:flex">ℹ️ Use para registrar atividades que não foram planejadas previamente.</div>
+<div class="alert al-d" id="alert-avulso" style="display:none"></div>
+<div style="background:linear-gradient(135deg,#0f2238,#1a3a5c);border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+<div>
+<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px">🕐 Hora do Registro</div>
+<div class="hora-registro-val" id="hora-registro-avulso">--:--</div>
+</div>
+<div style="font-size:11px;color:rgba(255,255,255,.4)">🔒 Automático</div>
+</div>
+<input id="hora-registro-avulso-valor" type="hidden"/>
+<form id="form-avulso">
+<div class="fg">
+<div class="fi full">
+<label>👷 Colaboradores *</label>
+<div class="multi-wrap">
+<div class="multi-select-box" id="multi-avulso-box">
+<div class="chips-wrap" id="chips-avulso-colaboradores"></div>
+<input autocomplete="off" class="multi-search" id="multi-avulso-search" placeholder="Buscar colaborador..."/>
+</div>
+<div class="multi-dropdown" id="multi-avulso-dropdown"></div>
+</div>
+<input id="avulso-colaboradores-ids" type="hidden"/>
+</div>
+<div class="fi full"><label>🚗 Veículo (opcional)</label><select id="avulso-veiculo"><option value="">Nenhum</option></select></div>
+<div class="fi full"><label>🏗️ Site / Centro de Custo *</label><select id="avulso-site" required=""><option value="">Selecione...</option></select></div>
+<div class="fi full"><label>🔧 Serviço / Atividade *</label><select id="avulso-servico" required=""><option value="">Selecione...</option></select></div>
+<div class="fi"><label>🕐 Hora Inicial *</label><input id="avulso-hora-inicio" required="" type="time"/></div>
+<div class="fi"><label>🕔 Hora Final</label><input id="avulso-hora-fim" type="time"/></div>
+<div class="fi full"><label>💬 Observação</label><textarea id="avulso-obs" placeholder="Descreva o motivo do apontamento avulso..."></textarea></div>
+</div>
+</form>
+</div>
+<div class="modal-ft">
+<button class="btn btn-o" onclick="SAD.closeModal('modal-avulso')">Cancelar</button>
+<button class="btn btn-p" onclick="Apontamento.salvarAvulso()">📝 Registrar Avulso</button>
+</div>
+</div>
+</div>
+<!-- ═══ MODAL: CADASTRO ═══ -->
+<div class="modal-bg" id="modal-cadastro">
+<div class="modal">
+<div class="modal-hd"><h3 id="modal-cad-title">Novo Registro</h3><button onclick="SAD.closeModal('modal-cadastro')">✕</button></div>
+<div class="modal-bd"><input id="modal-cad-tab" type="hidden"/><input id="modal-cad-id" type="hidden"/><div id="modal-cad-body"></div></div>
+<div class="modal-ft">
+<button class="btn btn-o" onclick="SAD.closeModal('modal-cadastro')">Cancelar</button>
+<button class="btn btn-p" onclick="Pages.cadastros.salvarCadastro()">💾 Salvar</button>
+</div>
+</div>
+</div>
+<script src="app.js"></script>
+<script>
+// ═══ HELPERS SAD ═══
+const SAD = {
+  openModal(id){document.getElementById(id)?.classList.add('open')},
+  closeModal(id){document.getElementById(id)?.classList.remove('open')},
+  showLoading(){document.getElementById('loadBar').style.opacity=1},
+  hideLoading(){document.getElementById('loadBar').style.opacity=0},
+  nav(page){
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+    document.querySelector(`.ni[data-page="${page}"]`)?.classList.add('active');
+    document.querySelectorAll('.page-section').forEach(s=>s.style.display='none');
+    const sec=document.getElementById(`page-${page}`);
+    if(sec) sec.style.display='block';
+    // Chama init da página
+    const inits={dashboard:()=>Dashboard.aplicarFiltro(),visao:()=>Visao.init(),planejamento:()=>Planejamento.init(),apontamento:()=>Apontamento.init(),relatorios:()=>Pages.relatorios.init?.(),cadastros:()=>Pages.cadastros.init()};
+    inits[page]?.();
+  }
+};
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show '+(type||'');
+  setTimeout(()=>t.className='toast',3500);
+}
+
+function horaAgora(){
+  const n=new Date();
+  return {hhmm:`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`,hhmmss:`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`};
+}
+
+// Override Utils
+Utils.openModal=SAD.openModal.bind(SAD);
+Utils.closeModal=SAD.closeModal.bind(SAD);
+Utils.showLoading=SAD.showLoading.bind(SAD);
+Utils.hideLoading=SAD.hideLoading.bind(SAD);
+Nav.go=SAD.nav.bind(SAD);
+
+// ═══ MULTI-SELECT FACTORY ═══
+function criarMultiSelect(prefix, dataKey){
+  return {
+    selected:[],
+    prefix,
+    dataKey,
+    init(){
+      this.selected=[];
+      this.renderChips();
+      this.renderDropdown('');
+      const search=document.getElementById(`multi-${prefix}-search`);
+      const dropdown=document.getElementById(`multi-${prefix}-dropdown`);
+      const box=document.getElementById(`multi-${prefix}-box`);
+      if(!search||!dropdown||!box) return;
+      search.oninput=()=>{this.renderDropdown(search.value);dropdown.classList.add('open');};
+      search.onfocus=()=>{this.renderDropdown(search.value);dropdown.classList.add('open');};
+      document.addEventListener('click',(e)=>{if(!box.contains(e.target)&&!dropdown.contains(e.target))dropdown.classList.remove('open');});
+      box.onclick=()=>{search.focus();dropdown.classList.add('open');};
+    },
+    clear(){this.selected=[];this.renderChips();const s=document.getElementById(`multi-${prefix}-search`);if(s)s.value='';const h=document.getElementById(`${prefix==='plan'?'plan':'apt'}-colaboradores-ids`)||document.getElementById(`${prefix}-colaboradores-ids`);if(h)h.value='';},
+    toggle(id,nome){const idx=this.selected.findIndex(s=>s.id===id);if(idx>=0)this.selected.splice(idx,1);else this.selected.push({id,nome});this.renderChips();this.renderDropdown(document.getElementById(`multi-${prefix}-search`).value||'');const h=document.getElementById(`${prefix}-colaboradores-ids`);if(h)h.value=this.selected.map(s=>s.id).join(',');document.getElementById(`multi-${prefix}-search`).value='';},
+    remove(id){this.selected=this.selected.filter(s=>s.id!==id);this.renderChips();const h=document.getElementById(`${prefix}-colaboradores-ids`);if(h)h.value=this.selected.map(s=>s.id).join(',');},
+    renderChips(){const w=document.getElementById(`chips-${prefix}-colaboradores`);if(!w)return;w.innerHTML=this.selected.map(s=>`<span class="chip">👷 ${s.nome}<button type="button" class="chip-remove" onclick="MS_${prefix}.remove('${s.id}')">×</button></span>`).join('');},
+    renderDropdown(q){const d=document.getElementById(`multi-${prefix}-dropdown`);if(!d)return;const cols=STATE.data[this.dataKey]||[];const f=cols.filter(c=>c.nome.toLowerCase().includes(q.toLowerCase()));if(!f.length){d.innerHTML='<div class="multi-opt" style="color:#94a3b8;cursor:default">Nenhum encontrado</div>';return;}d.innerHTML=f.map(c=>{const sel=this.selected.some(s=>s.id===c.id);return`<div class="multi-opt ${sel?'selected':''}" onclick="MS_${prefix}.toggle('${c.id}','${c.nome.replace(/'/g,"\\'")}')"> ${sel?'✓ ':''}👷 ${c.nome}</div>`;}).join('');}
+  };
+}
+
+const MS_plan   = criarMultiSelect('plan','colaboradores');
+const MS_apt    = criarMultiSelect('apt','colaboradores');
+const MS_avulso = criarMultiSelect('avulso','colaboradores');
+
+// ═══ DASHBOARD ═══
+const Dashboard = {
+  aplicarFiltro(){
+    const ini=document.getElementById('dash-data-inicio').value;
+    const fim=document.getElementById('dash-data-fim').value;
+    if(!ini||!fim){showToast('Selecione as datas.','warn');return;}
+    document.getElementById('dash-periodo-label').textContent=`📅 ${this.fmt(ini)} → ${this.fmt(fim)}`;
+    SAD.showLoading();
+    Pages.dashboard.init(ini,fim);
+  },
+  atalho(tipo){
+    const h=new Date();let ini,fim;
+    if(tipo==='hoje'){ini=fim=this.iso(h);document.getElementById('dash-periodo-label').textContent='📅 Hoje';}
+    else if(tipo==='semana'){const s=new Date(h);s.setDate(h.getDate()-h.getDay()+(h.getDay()===0?-6:1));ini=this.iso(s);fim=this.iso(h);document.getElementById('dash-periodo-label').textContent='📅 Esta Semana';}
+    else if(tipo==='mes'){ini=this.iso(new Date(h.getFullYear(),h.getMonth(),1));fim=this.iso(h);document.getElementById('dash-periodo-label').textContent='📅 Este Mês';}
+    else if(tipo==='mes_anterior'){ini=this.iso(new Date(h.getFullYear(),h.getMonth()-1,1));fim=this.iso(new Date(h.getFullYear(),h.getMonth(),0));document.getElementById('dash-periodo-label').textContent='📅 Mês Anterior';}
+    document.getElementById('dash-data-inicio').value=ini;
+    document.getElementById('dash-data-fim').value=fim;
+    SAD.showLoading();Pages.dashboard.init(ini,fim);
+  },
+  iso(d){return d.toISOString().slice(0,10);},
+  fmt(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return`${d}/${m}/${y}`;}
+};
+
+// ═══ VISÃO GERAL ═══
+const Visao = {
+  timer:null,
+  init(){
+    const fd=document.getElementById('visao-data');
+    if(fd&&!fd.value) fd.value=Utils.getCurrentDate();
+    this.carregar();
+    if(this.timer) clearInterval(this.timer);
+    this.timer=setInterval(()=>this.carregar(),60000);
+  },
+  async carregar(){
+    const data=document.getElementById('visao-data')?.value||Utils.getCurrentDate();
+    SAD.showLoading();
+    try{
+      const [planRes,sitesRes]=await Promise.all([
+        API.getPlanejamentos({data}),
+        API.getData('sites')
+      ]);
+      const plans=planRes.data||[];
+      const sites=sitesRes.data||[];
+      this.render(sites,plans,data);
+      document.getElementById('visao-ultima-atualizacao').textContent='Atualizado: '+new Date().toLocaleTimeString('pt-BR');
+    }catch(e){
+      this.renderDemo();
+    }finally{SAD.hideLoading();}
+  },
+  render(sites,plans,data){
+    // Resumo rápido
+    const resumoEl=document.getElementById('visao-resumo');
+    const total=plans.length;
+    const planejados=plans.filter(p=>p.status==='planejado').length;
+    const execucao=plans.filter(p=>p.status==='em_execucao').length;
+    const concluidos=plans.filter(p=>p.status==='concluido'||p.status==='conforme').length;
+    resumoEl.innerHTML=`
+      <div class="kpi" style="padding:12px"><div class="kpi-ico ic-az" style="width:36px;height:36px;font-size:16px">📋</div><div class="kpi-val"><h3 style="font-size:20px">${total}</h3><p>Total</p></div></div>
+      <div class="kpi" style="padding:12px"><div class="kpi-ico ic-az" style="width:36px;height:36px;font-size:16px">📋</div><div class="kpi-val"><h3 style="font-size:20px">${planejados}</h3><p>Planejados</p></div></div>
+      <div class="kpi" style="padding:12px"><div class="kpi-ico ic-am" style="width:36px;height:36px;font-size:16px">🟡</div><div class="kpi-val"><h3 style="font-size:20px">${execucao}</h3><p>Em Execução</p></div></div>
+      <div class="kpi" style="padding:12px"><div class="kpi-ico ic-vd" style="width:36px;height:36px;font-size:16px">✅</div><div class="kpi-val"><h3 style="font-size:20px">${concluidos}</h3><p>Concluídos</p></div></div>
+    `;
+
+    const container=document.getElementById('visao-cards');
+    if(!sites.length&&!plans.length){container.innerHTML='<div class="empty"><div class="ico">🗺️</div><h3>Nenhum planejamento para esta data</h3></div>';return;}
+
+    // Agrupa por site
+    const porSite={};
+    plans.forEach(p=>{
+      const key=p.siteId||'sem-site';
+      if(!porSite[key]) porSite[key]={site:p.site||'Sem Site',siteId:p.siteId,plans:[]};
+      porSite[key].plans.push(p);
+    });
+
+    // Sites sem planejamento também aparecem
+    sites.forEach(s=>{
+      if(!porSite[s.id]) porSite[s.id]={site:s.nome+' ('+s.codigo+')',siteId:s.id,plans:[]};
+    });
+
+    container.innerHTML=Object.values(porSite).map(g=>{
+      const statusCor={planejado:'#3b82f6',em_execucao:'#f59e0b',concluido:'#22c55e',conforme:'#22c55e',alteracao:'#f59e0b',nao_executado:'#ef4444'};
+      const plansHtml=g.plans.length===0
+        ?'<div class="site-card-empty">Nenhuma atividade planejada</div>'
+        :g.plans.map(p=>{
+          const equipe=Array.isArray(p.colaboradores)?p.colaboradores.join(', '):(p.colaboradoresNomes||'');
+          const cor=statusCor[p.status]||'#94a3b8';
+          return`<div style="border:1.5px solid ${cor}20;border-left:3px solid ${cor};border-radius:7px;padding:9px 11px;margin-bottom:7px;background:${cor}08">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+              <div style="font-weight:700;font-size:12.5px;color:#10243B">🔧 ${p.servico||''}</div>
+              <span style="font-size:10px;font-weight:700;color:${cor};background:${cor}20;padding:2px 8px;border-radius:20px">${p.status||'planejado'}</span>
+            </div>
+            <div style="font-size:11.5px;color:#64748b">👷 ${equipe}</div>
+            ${p.veiculo?`<div style="font-size:11.5px;color:#64748b">🚗 ${p.veiculo}</div>`:''}
+            ${p.horaInicioPlano?`<div style="font-size:11.5px;color:#64748b">⏰ ${p.horaInicioPlano}${p.horaFimPlano?' → '+p.horaFimPlano:''}</div>`:''}
+          </div>`;
+        }).join('');
+
+      const totalSite=g.plans.length;
+      const concSite=g.plans.filter(p=>['concluido','conforme'].includes(p.status)).length;
+      return`<div class="site-card">
+        <div class="site-card-hd">
+          <div>
+            <div class="site-card-nome">🏗️ ${g.site}</div>
+            <div class="site-card-cod">${totalSite} atividade${totalSite!==1?'s':''} · ${concSite} concluída${concSite!==1?'s':''}</div>
+          </div>
+          <div style="display:flex;gap:5px">
+            ${g.plans.filter(p=>p.status==='em_execucao').length>0?`<span style="background:rgba(245,158,11,.2);color:#f0c040;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;animation:pulse 1.5s infinite">● EM CAMPO</span>`:''}
+          </div>
+        </div>
+        <div class="site-card-body">${plansHtml}</div>
+      </div>`;
+    }).join('');
+  },
+  renderDemo(){
+    document.getElementById('visao-cards').innerHTML='<div class="empty"><div class="ico">🗺️</div><h3>Nenhum dado disponível</h3><p>Configure a integração com o Google Sheets</p></div>';
+  }
+};
+
+// ═══ PLANEJAMENTO ═══
+const Planejamento = {
+  init(){
+    const fd=document.getElementById('plan-data-filtro');
+    if(fd&&!fd.value) fd.value=Utils.getCurrentDate();
+    this.popularSelects();
+  },
+  async popularSelects(){
+    try{
+      const [col,vei,sit,ser]=await Promise.all([API.getData('colaboradores'),API.getData('veiculos'),API.getData('sites'),API.getData('servicos')]);
+      STATE.data.colaboradores=col.data||[];STATE.data.veiculos=vei.data||[];STATE.data.sites=sit.data||[];STATE.data.servicos=ser.data||[];
+    }catch(e){
+      STATE.data.colaboradores=[{id:'1',nome:'João Silva'},{id:'2',nome:'Maria Santos'},{id:'3',nome:'Carlos Lima'},{id:'4',nome:'Ana Costa'}];
+      STATE.data.veiculos=[{id:'1',placa:'ABC-1234',modelo:'Fiat Strada'},{id:'2',placa:'DEF-5678',modelo:'VW Saveiro'}];
+      STATE.data.sites=[{id:'1',nome:'Site Alpha',codigo:'CC001'},{id:'2',nome:'Site Beta',codigo:'CC002'},{id:'3',nome:'Site Gamma',codigo:'CC003'}];
+      STATE.data.servicos=[{id:'1',nome:'Manutenção Preventiva'},{id:'2',nome:'Instalação'},{id:'3',nome:'Inspeção'},{id:'4',nome:'Transporte'}];
+    }
+    ['plan-veiculo','avulso-veiculo','apt-veiculo'].forEach(id=>{
+      const el=document.getElementById(id);if(!el)return;
+      el.innerHTML='<option value="">Nenhum</option>'+STATE.data.veiculos.map(v=>`<option value="${v.id}">${v.placa} - ${v.modelo}</option>`).join('');
+    });
+    ['plan-site','avulso-site','apt-site'].forEach(id=>{
+      const el=document.getElementById(id);if(!el)return;
+      el.innerHTML='<option value="">Selecione...</option>'+STATE.data.sites.map(s=>`<option value="${s.id}">${s.nome} (${s.codigo})</option>`).join('');
+    });
+    ['plan-servico','avulso-servico','apt-servico'].forEach(id=>{
+      const el=document.getElementById(id);if(!el)return;
+      el.innerHTML='<option value="">Selecione...</option>'+STATE.data.servicos.map(s=>`<option value="${s.id}">${s.nome}</option>`).join('');
+    });
+    // Selects de apontamento avulso com "Mesmo do planejamento"
+    ['apt-veiculo','apt-site','apt-servico'].forEach(id=>{
+      const el=document.getElementById(id);if(!el)return;
+      const first=el.options[0];
+      if(first) first.text='Mesmo do planejamento';
+    });
+  },
+  async carregar(){
+    const data=document.getElementById('plan-data-filtro')?.value||Utils.getCurrentDate();
+    SAD.showLoading();
+    try{
+      const res=await API.getPlanejamentos({data});
+      this.renderLista(res.data||[]);
+    }catch(e){
+      this.renderLista([]);
+    }finally{SAD.hideLoading();}
+  },
+  renderLista(lista){
+    const container=document.getElementById('lista-planejamentos');
+    if(!lista.length){container.innerHTML='<div class="empty"><div class="ico">📋</div><h3>Nenhum planejamento para esta data</h3><p>Clique em "Novo Planejamento" para adicionar</p></div>';return;}
+
+    const statusLabel={planejado:'📋 Planejado',em_execucao:'🟡 Em Execução',concluido:'✅ Concluído',conforme:'✅ Conforme',alteracao:'⚠️ Com Alteração',nao_executado:'❌ Não Executado'};
+    const statusClass={planejado:'b-az',em_execucao:'b-am',concluido:'b-vd',conforme:'b-vd',alteracao:'b-am',nao_executado:'b-vm'};
+
+    container.innerHTML=lista.map(p=>{
+      const equipe=Array.isArray(p.colaboradores)?p.colaboradores.join(', '):(p.colaboradoresNomes||'');
+      const st=p.status||'planejado';
+      return`<div class="plan-card ${st}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div>
+              <div style="font-weight:800;font-size:14px;color:#10243B">${p.site||''}</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px">🔧 ${p.servico||''}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:7px;align-items:center">
+            <span class="b ${statusClass[st]||'b-gz'}">${statusLabel[st]||st}</span>
+            ${Auth.hasPermission('cadastros')?`<button class="btn btn-d btn-sm" onclick="Planejamento.excluir('${p.id}')">🗑️</button>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#64748b">
+          <span>👷 <strong style="color:#10243B">${equipe}</strong></span>
+          ${p.veiculo?`<span>🚗 <strong style="color:#10243B">${p.veiculo}</strong></span>`:''}
+          ${p.horaInicioPlano?`<span>⏰ <strong style="color:#10243B">${p.horaInicioPlano}${p.horaFimPlano?' → '+p.horaFimPlano:''}</strong></span>`:''}
+        </div>
+        ${p.observacao?`<div style="margin-top:8px;font-size:12px;color:#64748b;background:#F0F4F8;padding:7px 11px;border-radius:6px">💬 ${p.observacao}</div>`:''}
+      </div>`;
+    }).join('');
+  },
+  abrirNovo(){
+    document.getElementById('form-planejamento').reset();
+    const d=document.getElementById('plan-data-filtro')?.value||Utils.getCurrentDate();
+    document.getElementById('plan-data').value=d;
+    MS_plan.init();
+    SAD.openModal('modal-planejamento');
+  },
+  async salvar(){
+    const ids=document.getElementById('plan-colaboradores-ids').value;
+    if(!ids){showToast('Selecione ao menos um colaborador.','warn');return;}
+    const dados={
+      colaboradoresIds:ids.split(','),
+      colaboradoresNomes:MS_plan.selected.map(s=>s.nome),
+      veiculoId:document.getElementById('plan-veiculo').value,
+      siteId:document.getElementById('plan-site').value,
+      servicoId:document.getElementById('plan-servico').value,
+      horaInicioPlano:document.getElementById('plan-hora-inicio').value,
+      horaFimPlano:document.getElementById('plan-hora-fim').value,
+      observacao:document.getElementById('plan-obs').value,
+      data:document.getElementById('plan-data').value,
+      usuarioId:STATE.user?.id
+    };
+    if(!dados.siteId||!dados.servicoId||!dados.data){showToast('Preencha os campos obrigatórios.','warn');return;}
+    SAD.showLoading();
+    try{
+      await API.salvarPlanejamento(dados);
+      SAD.closeModal('modal-planejamento');
+      showToast('Planejamento salvo com sucesso!','ok');
+      await this.carregar();
+    }catch(e){showToast('Erro ao salvar planejamento.','err');}
+    finally{SAD.hideLoading();}
+  },
+  async excluir(id){
+    if(!confirm('Deseja excluir este planejamento?')) return;
+    SAD.showLoading();
+    try{await API.excluirPlanejamento(id);await this.carregar();showToast('Planejamento excluído.','ok');}
+    catch(e){showToast('Erro ao excluir.','err');}
+    finally{SAD.hideLoading();}
+  }
+};
+
+// ═══ APONTAMENTO (VALIDAÇÃO) ═══
+const Apontamento = {
+  lista:[],
+  init(){
+    const fd=document.getElementById('apt-data-filtro');
+    if(fd&&!fd.value) fd.value=Utils.getCurrentDate();
+    if(!STATE.data.colaboradores?.length) Planejamento.popularSelects();
+  },
+  async carregar(){
+    const data=document.getElementById('apt-data-filtro')?.value||Utils.getCurrentDate();
+    SAD.showLoading();
+    try{
+      const res=await API.getPlanejamentos({data});
+      this.lista=res.data||[];
+      this.renderLista();
+    }catch(e){this.lista=[];this.renderLista();}
+    finally{SAD.hideLoading();}
+  },
+  renderLista(){
+    const container=document.getElementById('lista-apontamentos');
+    if(!this.lista.length){container.innerHTML='<div class="empty"><div class="ico">✅</div><h3>Nenhum planejamento para validar nesta data</h3><p>Selecione outra data ou crie um planejamento primeiro</p></div>';return;}
+
+    const statusLabel={planejado:'📋 Aguardando Validação',em_execucao:'🟡 Em Execução',concluido:'✅ Concluído',conforme:'✅ Conforme',alteracao:'⚠️ Com Alteração',nao_executado:'❌ Não Executado'};
+    const statusClass={planejado:'b-az',em_execucao:'b-am',concluido:'b-vd',conforme:'b-vd',alteracao:'b-am',nao_executado:'b-vm'};
+
+    container.innerHTML=this.lista.map(p=>{
+      const equipe=Array.isArray(p.colaboradores)?p.colaboradores.join(', '):(p.colaboradoresNomes||'');
+      const st=p.status||'planejado';
+      const podeValidar=['planejado','em_execucao'].includes(st);
+      return`<div class="apt-val-card">
+        <div class="apt-val-hd">
+          <div>
+            <div style="font-weight:800;font-size:14px;color:#10243B">${p.site||''} — ${p.servico||''}</div>
+            <div style="font-size:11.5px;color:#64748b;margin-top:3px">👷 ${equipe} ${p.veiculo?'· 🚗 '+p.veiculo:''} ${p.horaInicioPlano?'· ⏰ '+p.horaInicioPlano+(p.horaFimPlano?' → '+p.horaFimPlano:''):''}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="b ${statusClass[st]||'b-gz'}">${statusLabel[st]||st}</span>
+            ${podeValidar?`<button class="btn btn-p btn-sm" onclick="Apontamento.abrirValidacao('${p.id}')">✅ Validar</button>`:''}
+          </div>
+        </div>
+        ${(st==='alteracao'&&p.observacao)?`<div class="apt-val-body"><div style="font-size:12px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:6px">⚠️ ${p.observacao}</div></div>`:''}
+        ${st==='nao_executado'?`<div class="apt-val-body"><div style="font-size:12px;color:#991b1b;background:#fee2e2;padding:8px 12px;border-radius:6px">❌ ${p.observacao||'Não executado'}</div></div>`:''}
+      </div>`;
+    }).join('');
+  },
+  abrirValidacao(planId){
+    const plan=this.lista.find(p=>p.id===planId);
+    if(!plan) return;
+    document.getElementById('validar-plan-id').value=planId;
+    document.getElementById('validar-status').value='';
+    document.getElementById('validar-hora-inicio').value=plan.horaInicioPlano||Utils.getCurrentTime();
+    document.getElementById('validar-hora-fim').value=plan.horaFimPlano||'';
+    document.getElementById('validar-obs').value='';
+    document.getElementById('validar-motivo').value='';
+    document.getElementById('validar-alteracao-section').style.display='none';
+    document.getElementById('validar-nao-exec-section').style.display='none';
+    const equipe=Array.isArray(plan.colaboradores)?plan.colaboradores.join(', '):(plan.colaboradoresNomes||'');
+    document.getElementById('validar-planejado-info').innerHTML=`
+      👷 <strong>${equipe}</strong><br>
+      🏗️ <strong>${plan.site||''}</strong><br>
+      🔧 <strong>${plan.servico||''}</strong><br>
+      ${plan.veiculo?`🚗 <strong>${plan.veiculo}</strong><br>`:''}
+      ${plan.horaInicioPlano?`⏰ <strong>${plan.horaInicioPlano}${plan.horaFimPlano?' → '+plan.horaFimPlano:''}</strong>`:''}
+    `;
+    document.getElementById('modal-validar-title').textContent='✅ Validar — '+plan.site;
+    const h=horaAgora();
+    document.getElementById('hora-registro-display').textContent=h.hhmm;
+    document.getElementById('hora-registro-valor').value=h.hhmmss;
+    MS_apt.init();
+    SAD.openModal('modal-validar');
+  },
+  onStatusChange(val){
+    document.getElementById('validar-alteracao-section').style.display=val==='alteracao'?'block':'none';
+    document.getElementById('validar-nao-exec-section').style.display=val==='nao_executado'?'block':'none';
+    document.getElementById('validar-horas-section').style.display=val==='nao_executado'?'none':'grid';
+  },
+  async salvarValidacao(){
+    const planId=document.getElementById('validar-plan-id').value;
+    const status=document.getElementById('validar-status').value;
+    if(!status){showToast('Selecione o status de conformidade.','warn');return;}
+    const horaInicio=document.getElementById('validar-hora-inicio').value;
+    const horaFim=document.getElementById('validar-hora-fim').value;
+    const obs=document.getElementById('validar-obs').value;
+    const motivo=document.getElementById('validar-motivo').value;
+    const horaRegistro=document.getElementById('hora-registro-valor').value;
+    if(status==='nao_executado'&&!motivo){showToast('Informe o motivo do não executado.','warn');return;}
+    if(status!=='nao_executado'&&!horaInicio){showToast('Informe a hora inicial.','warn');return;}
+
+    // Monta observação completa
+    let obsCompleta=obs;
+    if(status==='nao_executado') obsCompleta=motivo+(obs?'\n'+obs:'');
+    if(status==='alteracao'){
+      const aptIds=document.getElementById('apt-colaboradores-ids').value;
+      const aptSite=document.getElementById('apt-site').value;
+      const aptServico=document.getElementById('apt-servico').value;
+      const aptVeiculo=document.getElementById('apt-veiculo').value;
+      const alteracoes=[];
+      if(aptIds) alteracoes.push('Colaboradores alterados: '+MS_apt.selected.map(s=>s.nome).join(', '));
+      if(aptSite) alteracoes.push('Site alterado');
+      if(aptServico) alteracoes.push('Serviço alterado');
+      if(aptVeiculo) alteracoes.push('Veículo alterado');
+      if(alteracoes.length) obsCompleta='Alterações: '+alteracoes.join(' | ')+(obs?'\n'+obs:'');
+    }
+
+    // Salva o apontamento
+    const dados={
+      colaboradoresIds:MS_apt.selected.length>0?MS_apt.selected.map(s=>s.id):[],
+      colaboradoresNomes:MS_apt.selected.map(s=>s.nome),
+      veiculoId:document.getElementById('apt-veiculo').value,
+      siteId:document.getElementById('apt-site').value,
+      servicoId:document.getElementById('apt-servico').value,
+      horaInicio,horaFim,horaRegistro,
+      observacao:obsCompleta,
+      statusConformidade:status,
+      planejamentoId:planId,
+      data:document.getElementById('apt-data-filtro').value||Utils.getCurrentDate(),
+      usuarioId:STATE.user?.id
+    };
+
+    SAD.showLoading();
+    try{
+      await API.salvarApontamento(dados);
+      await API.atualizarPlanejamento(planId,status==='conforme'?'concluido':status,obsCompleta);
+      SAD.closeModal('modal-validar');
+      showToast('Apontamento registrado!','ok');
+      await this.carregar();
+    }catch(e){showToast('Erro ao salvar apontamento.','err');}
+    finally{SAD.hideLoading();}
+  },
+  async salvarAvulso(){
+    const ids=document.getElementById('avulso-colaboradores-ids').value;
+    if(!ids){showToast('Selecione ao menos um colaborador.','warn');return;}
+    const dados={
+      colaboradoresIds:ids.split(','),
+      colaboradoresNomes:MS_avulso.selected.map(s=>s.nome),
+      veiculoId:document.getElementById('avulso-veiculo').value,
+      siteId:document.getElementById('avulso-site').value,
+      servicoId:document.getElementById('avulso-servico').value,
+      horaInicio:document.getElementById('avulso-hora-inicio').value,
+      horaFim:document.getElementById('avulso-hora-fim').value,
+      horaRegistro:document.getElementById('hora-registro-avulso-valor').value,
+      observacao:document.getElementById('avulso-obs').value,
+      statusConformidade:'avulso',
+      data:document.getElementById('apt-data-filtro').value||Utils.getCurrentDate(),
+      usuarioId:STATE.user?.id
+    };
+    if(!dados.siteId||!dados.servicoId||!dados.horaInicio){showToast('Preencha os campos obrigatórios.','warn');return;}
+    SAD.showLoading();
+    try{
+      await API.salvarApontamento(dados);
+      SAD.closeModal('modal-avulso');
+      showToast('Apontamento avulso registrado!','ok');
+      await this.carregar();
+    }catch(e){showToast('Erro ao salvar.','err');}
+    finally{SAD.hideLoading();}
+  }
+};
+
+// ═══ INIT ═══
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!Auth.requireAuth()) return;
+  const user=STATE.user;
+  document.getElementById('user-name').textContent=user.nome;
+  document.getElementById('user-avatar').textContent=user.nome.charAt(0).toUpperCase();
+
+  // Permissões navbar
+  const perms={admin:['dashboard','visao','planejamento','apontamento','relatorios','cadastros'],coordenador:['dashboard','visao','planejamento','apontamento','relatorios'],supervisor:['visao','apontamento']};
+  const allowed=perms[user.perfil]||['visao','apontamento'];
+  document.querySelectorAll('.ni[data-page]').forEach(btn=>{
+    if(!allowed.includes(btn.dataset.page)) btn.style.display='none';
+  });
+
+  document.getElementById('btn-logout').addEventListener('click',()=>Auth.logout());
+
+  document.querySelectorAll('.ni[data-page]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(!allowed.includes(btn.dataset.page)) return;
+      SAD.nav(btn.dataset.page);
+    });
+  });
+
+  // Tabs cadastro
+  document.querySelectorAll('.tab[data-tab]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab=btn.dataset.tab;
+      Pages.cadastros.activeTab=tab;
+      ['colaboradores','veiculos','sites','servicos','usuarios'].forEach(t=>{
+        document.getElementById(`table-${t}`).style.display=t===tab?'block':'none';
+      });
+      Pages.cadastros.loadTab(tab);
+    });
+  });
+
+  // Botões
+  document.getElementById('btn-novo-planejamento')?.addEventListener('click',()=>Planejamento.abrirNovo());
+  document.getElementById('btn-novo-apontamento-avulso')?.addEventListener('click',()=>{
+    document.getElementById('form-avulso').reset();
+    const h=horaAgora();
+    document.getElementById('hora-registro-avulso').textContent=h.hhmm;
+    document.getElementById('hora-registro-avulso-valor').value=h.hhmmss;
+    document.getElementById('avulso-hora-inicio').value=Utils.getCurrentTime();
+    MS_avulso.init();
+    SAD.openModal('modal-avulso');
+  });
+
+  // Datas
+  const hoje=Utils.getCurrentDate();
+  ['dash-data-inicio','dash-data-fim','rel-data-inicio','rel-data-fim'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value=hoje;
+  });
+
+  // Dashboard extras
+  const origRender=Pages.dashboard.render.bind(Pages.dashboard);
+  Pages.dashboard.render=function(data){
+    origRender(data);
+    const total=data.totalHoje||0,conc=data.concluidos||0;
+    const taxa=total>0?Math.round((conc/total)*100):0;
+    const tc=document.getElementById('taxa-conclusao');if(tc)tc.textContent=taxa+'%';
+    const cu=document.getElementById('kpi-col-unicos');if(cu)cu.textContent=data.colaboradoresAtivos||'--';
+    const sa=document.getElementById('kpi-sites-ativos');if(sa)sa.textContent=(data.porSite||[]).length;
+    const pe=document.getElementById('kpi-pendentes');if(pe)pe.textContent=data.registrosAbertos||0;
+    const pl=document.getElementById('kpi-planejados');if(pl)pl.textContent=data.planejados||0;
+  };
+
+  // Relatórios - popula filtros
+  Pages.relatorios.init=async function(){
+    try{
+      const [col,vei,sit,ser]=await Promise.all([API.getData('colaboradores'),API.getData('veiculos'),API.getData('sites'),API.getData('servicos')]);
+      this.populateFiltro('rel-colaborador',col.data,'nome');
+      this.populateFiltro('rel-veiculo',vei.data,'placa');
+      this.populateFiltro('rel-site',sit.data,'nome');
+      this.populateFiltro('rel-servico',ser.data,'nome');
+    }catch(e){}
+  };
+
+  // Página inicial conforme perfil
+  const startPage=allowed.includes('dashboard')?'dashboard':'visao';
+  SAD.nav(startPage);
+});
+</script>
+</body>
+</html>
